@@ -1,0 +1,2 @@
+# Slice
+Spending Tracking App
