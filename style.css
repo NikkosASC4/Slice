@@ -1,0 +1,558 @@
+/* ─── CSS Variables ─────────────────────────────────────── */
+:root {
+  --bg:              #0e0f11;
+  --surface:         #161719;
+  --card:            #1d1e21;
+  --border:          #2a2b2e;
+  --text:            #f0efe8;
+  --muted:           #7a7975;
+  --accent:          #c8f060;
+  --danger:          #ff6b4a;
+  --remaining-color: #2a2b2e;
+}
+
+/* ─── Reset & Base ──────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 100px;
+  max-width: 430px;
+  margin: 0 auto;
+}
+
+/* ─── Header ────────────────────────────────────────────── */
+header {
+  width: 100%;
+  padding: 28px 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+header h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px;
+  font-weight: 400;
+  letter-spacing: -0.5px;
+  color: var(--accent);
+}
+
+header p {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 300;
+}
+
+/* ─── Period Tabs ───────────────────────────────────────── */
+.period-tabs {
+  display: flex;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 4px;
+  margin: 20px 24px 0;
+  gap: 2px;
+}
+
+.period-tabs button {
+  flex: 1;
+  padding: 8px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.period-tabs button.active {
+  background: var(--accent);
+  color: #0e0f11;
+}
+
+/* ─── Budget Bar ────────────────────────────────────────── */
+.budget-bar {
+  width: 100%;
+  padding: 16px 24px 0;
+}
+
+.budget-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.budget-label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.budget-edit-btn {
+  font-size: 12px;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+}
+
+.budget-amounts {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.budget-spent {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  color: var(--text);
+}
+
+.budget-remaining {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  color: var(--accent);
+}
+
+.budget-remaining.over {
+  color: var(--danger);
+}
+
+.budget-sub {
+  font-size: 11px;
+  color: var(--muted);
+  display: block;
+  margin-top: 1px;
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background: var(--card);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: var(--accent);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
+}
+
+.progress-fill.over {
+  background: var(--danger);
+}
+
+/* ─── Budget Modal ──────────────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 100;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+.modal {
+  width: 100%;
+  max-width: 430px;
+  background: var(--card);
+  border-radius: 20px 20px 0 0;
+  padding: 28px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.modal label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.modal input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  width: 100%;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.modal input:focus {
+  border-color: var(--accent);
+}
+
+.modal-btn {
+  background: var(--accent);
+  color: #0e0f11;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.modal-btn:active {
+  opacity: 0.8;
+}
+
+/* ─── Chart Section ─────────────────────────────────────── */
+.chart-section {
+  width: 100%;
+  padding: 20px 24px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.chart-wrap {
+  position: relative;
+  width: 220px;
+  height: 220px;
+}
+
+#pie {
+  width: 220px;
+  height: 220px;
+}
+
+.chart-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.total-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.total-amt {
+  font-family: 'DM Serif Display', serif;
+  font-size: 26px;
+  color: var(--text);
+  letter-spacing: -1px;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.budget-of {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.no-budget-msg {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  border: 3px dashed var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.no-budget-msg span {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  padding: 0 30px;
+}
+
+/* ─── Legend ────────────────────────────────────────────── */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  padding: 0 24px;
+  justify-content: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--card);
+  border-radius: 100px;
+  padding: 4px 10px 4px 6px;
+  border: 1px solid var(--border);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ─── Add Expense ───────────────────────────────────────── */
+.add-section {
+  width: 100%;
+  padding: 20px 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.add-section h2 {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.input-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-group label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+input[type="number"],
+select {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+
+input[type="number"]:focus,
+select:focus {
+  border-color: var(--accent);
+}
+
+input[type="number"] {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+}
+
+select option {
+  background: #1d1e21;
+}
+
+.add-btn {
+  background: var(--accent);
+  color: #0e0f11;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 14px 24px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  align-self: flex-end;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.add-btn:active {
+  opacity: 0.8;
+  transform: scale(0.97);
+}
+
+/* ─── Entries List ──────────────────────────────────────── */
+.entries-section {
+  width: 100%;
+  padding: 20px 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.entries-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.entries-header h2 {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.clear-btn {
+  font-size: 11px;
+  color: var(--danger);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  opacity: 0.7;
+  padding: 2px 0;
+}
+
+.clear-btn:hover {
+  opacity: 1;
+}
+
+.entry-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.entry-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.entry-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.entry-cat {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.entry-date {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.entry-amount {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 0 0 4px;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+.delete-btn:hover {
+  opacity: 1;
+  color: var(--danger);
+}
+
+.no-entries {
+  text-align: center;
+  padding: 20px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ─── Toast ─────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--accent);
+  color: #0e0f11;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 100px;
+  pointer-events: none;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+  z-index: 200;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+}
