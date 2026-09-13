@@ -1,284 +1,366 @@
 /* ─── Constants ─────────────────────────────────────────── */
-const COLORS = {
-  Food:          '#c8f060',
-  Transport:     '#60c8f0',
-  Shopping:      '#f060c8',
-  Entertainment: '#f0b060',
-  Health:        '#7060f0',
-  Other:         '#60f0b0',
-};
+const PALETTE = ['#c8f060', '#60c8f0', '#f060c8', '#f0b060', '#7060f0', '#60f0b0', '#f0605f', '#60e0f0'];
 const REMAINING_COLOR = '#2a2b2e';
-
+const CADENCE_LABEL = { weekly: 'weekly', monthly: 'monthly', asneeded: 'as needed' };
+ 
+const DEFAULT_BUCKETS = [
+  { name: 'Groceries',          allocated: 350, cadence: 'weekly'  },
+  { name: 'Gas',                 allocated: 120, cadence: 'monthly' },
+  { name: 'Fun & Wants',         allocated: 200, cadence: 'monthly' },
+  { name: 'Household & Random',  allocated: 60,  cadence: 'monthly' },
+  { name: 'Car Maintenance',     allocated: 50,  cadence: 'monthly' },
+];
+ 
 /* ─── State ─────────────────────────────────────────────── */
+let buckets = loadBuckets();
 let entries = JSON.parse(localStorage.getItem('slice_entries') || '[]');
-let budgets = JSON.parse(localStorage.getItem('slice_budgets') || '{}');
-let period  = 'daily';
 let chart   = null;
-
+let pullingBucketId  = null;   // which bucket the pull-modal is currently targeting
+let editingBucketId  = null;   // which bucket the bucket-modal is currently editing (null = creating new)
+ 
 /* ─── Persistence ───────────────────────────────────────── */
+function loadBuckets() {
+  const stored = localStorage.getItem('slice_buckets');
+  if (stored) return JSON.parse(stored);
+  // First run (or pre-buckets version of Slice): seed sensible starter buckets.
+  const now = new Date().toISOString();
+  return DEFAULT_BUCKETS.map((b, i) => ({
+    id:        'b_' + Date.now().toString(36) + i,
+    name:      b.name,
+    allocated: b.allocated,
+    cadence:   b.cadence,
+    color:     PALETTE[i % PALETTE.length],
+    lastReset: now,
+  }));
+}
+ 
 function save() {
+  localStorage.setItem('slice_buckets', JSON.stringify(buckets));
   localStorage.setItem('slice_entries', JSON.stringify(entries));
-  localStorage.setItem('slice_budgets', JSON.stringify(budgets));
 }
-
-/* ─── Period ────────────────────────────────────────────── */
-function setPeriod(p) {
-  period = p;
-  document.querySelectorAll('#period-tabs button').forEach((btn, i) => {
-    btn.classList.toggle('active', ['daily', 'weekly', 'monthly'][i] === p);
-  });
-  render();
+ 
+/* ─── Bucket math ───────────────────────────────────────── */
+// A bucket's "current cycle" is every entry logged against it since its last reset.
+// Resetting a bucket doesn't delete history — it just moves the cutoff forward, so
+// the Recent Activity log stays intact while the bucket's remaining balance goes
+// back to full.
+function entriesFor(bucketId) {
+  const b = buckets.find(x => x.id === bucketId);
+  if (!b) return [];
+  const cutoff = new Date(b.lastReset);
+  return entries.filter(e => e.bucketId === bucketId && new Date(e.date) >= cutoff);
 }
-
-/* ─── Filtering ─────────────────────────────────────────── */
-function getFiltered() {
-  const now = new Date();
-  return entries.filter(e => {
-    const d = new Date(e.date);
-    if (period === 'daily') {
-      return d.toDateString() === now.toDateString();
-    }
-    if (period === 'weekly') {
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - now.getDay());
-      startOfWeek.setHours(0, 0, 0, 0);
-      return d >= startOfWeek;
-    }
-    // monthly
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
+ 
+function spentOn(bucketId) {
+  return entriesFor(bucketId).reduce((s, e) => s + e.amount, 0);
 }
-
-function groupByCategory(list) {
-  return list.reduce((map, e) => {
-    map[e.category] = (map[e.category] || 0) + e.amount;
-    return map;
-  }, {});
+ 
+function remainingOn(bucketId) {
+  const b = buckets.find(x => x.id === bucketId);
+  return b.allocated - spentOn(bucketId);
 }
-
+ 
 /* ─── Formatting ────────────────────────────────────────── */
 function fmt(n) {
-  return '$' + Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const sign = n < 0 ? '-' : '';
+  return sign + '$' + Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
-
+ 
+function timeAgoOrDate(iso) {
+  return new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+ 
 /* ─── Render ────────────────────────────────────────────── */
 function render() {
-  const filtered    = getFiltered();
-  const grouped     = groupByCategory(filtered);
-  const cats        = Object.keys(grouped);
-  const totalSpent  = cats.reduce((s, c) => s + grouped[c], 0);
-  const budget      = budgets[period] || null;
-  const remaining   = budget !== null ? budget - totalSpent : null;
-  const isOver      = remaining !== null && remaining < 0;
-  const pct         = budget ? Math.min((totalSpent / budget) * 100, 100) : 0;
-
-  const periodLabels = { daily: 'Today', weekly: 'This week', monthly: 'This month' };
-  document.getElementById('period-label').textContent     = periodLabels[period];
-  document.getElementById('entries-heading').textContent  = periodLabels[period] + "'s entries";
-
-  renderBudgetBar(totalSpent, budget, remaining, isOver, pct);
-  renderChart(cats, grouped, totalSpent, budget, remaining, isOver);
-  renderEntries(filtered);
+  renderOverviewChart();
+  renderBuckets();
+  renderActivity();
 }
-
-/* ─── Budget Bar ────────────────────────────────────────── */
-function renderBudgetBar(totalSpent, budget, remaining, isOver, pct) {
-  const spentEl    = document.getElementById('spent-display');
-  const remEl      = document.getElementById('remaining-display');
-  const remLabel   = document.getElementById('remaining-label');
-  const fillEl     = document.getElementById('progress-fill');
-
-  spentEl.textContent = fmt(totalSpent);
-
-  if (budget !== null) {
-    remEl.textContent   = isOver ? '–' + fmt(remaining) : fmt(remaining);
-    remEl.className     = 'budget-remaining' + (isOver ? ' over' : '');
-    remLabel.textContent = isOver ? 'over budget' : 'remaining of ' + fmt(budget);
-    fillEl.style.width  = pct + '%';
-    fillEl.className    = 'progress-fill' + (isOver ? ' over' : '');
-  } else {
-    remEl.textContent    = '—';
-    remEl.className      = 'budget-remaining';
-    remLabel.textContent = 'set a budget';
-    fillEl.style.width   = '0%';
-    fillEl.className     = 'progress-fill';
-  }
-}
-
-/* ─── Chart ─────────────────────────────────────────────── */
-function renderChart(cats, grouped, totalSpent, budget, remaining, isOver) {
-  const noBudgetMsg = document.getElementById('no-budget-msg');
-  const pieCanvas   = document.getElementById('pie');
-  const center      = document.getElementById('chart-center');
-  const legend      = document.getElementById('legend');
-  const totalAmtEl  = document.getElementById('total-amt');
-  const budgetOfEl  = document.getElementById('budget-of');
-
-  if (budget === null) {
-    noBudgetMsg.style.display = 'flex';
-    pieCanvas.style.display   = 'none';
-    center.style.display      = 'none';
+ 
+/* ─── Overview donut: every bucket's spend vs. total remaining ─── */
+function renderOverviewChart() {
+  const noMsg   = document.getElementById('no-budget-msg');
+  const pie     = document.getElementById('pie');
+  const center  = document.getElementById('chart-center');
+  const totalEl = document.getElementById('total-amt');
+  const ofEl    = document.getElementById('budget-of');
+ 
+  if (buckets.length === 0) {
+    noMsg.style.display = 'flex';
+    noMsg.querySelector('span').textContent = 'Add a bucket to get started.';
+    pie.style.display = 'none';
+    center.style.display = 'none';
     if (chart) { chart.destroy(); chart = null; }
-    legend.innerHTML = '';
     return;
   }
-
-  noBudgetMsg.style.display = 'none';
-  pieCanvas.style.display   = 'block';
-  center.style.display      = 'flex';
-
-  totalAmtEl.innerHTML = fmt(totalSpent) +
-    '<br><span style="font-size:12px;color:var(--muted);font-family:\'DM Sans\',sans-serif;font-weight:400;">spent</span>';
-  budgetOfEl.textContent = 'of ' + fmt(budget);
-
-  // Build slices: one per category, plus a "Remaining" slice if under budget
-  const chartCats   = [...cats];
-  const chartData   = cats.map(c => grouped[c]);
-  const chartColors = cats.map(c => COLORS[c] || '#aaa');
-
-  if (!isOver) {
-    chartCats.push('Remaining');
-    chartData.push(remaining);
-    chartColors.push(REMAINING_COLOR);
+ 
+  if (typeof Chart === 'undefined') {
+    // Chart.js didn't load (offline, blocked script, etc.) — degrade gracefully.
+    // The buckets themselves still work fully; only the overview donut is skipped.
+    noMsg.style.display = 'flex';
+    noMsg.querySelector('span').textContent = 'Chart unavailable offline — your buckets below still work.';
+    pie.style.display = 'none';
+    center.style.display = 'none';
+    return;
   }
-
+ 
+  noMsg.style.display = 'none';
+  pie.style.display = 'block';
+  center.style.display = 'flex';
+ 
+  const totalAllocated = buckets.reduce((s, b) => s + b.allocated, 0);
+  const totalSpent     = buckets.reduce((s, b) => s + spentOn(b.id), 0);
+  const totalRemaining = totalAllocated - totalSpent;
+  const isOver          = totalRemaining < 0;
+ 
+  totalEl.innerHTML = fmt(totalRemaining) +
+    '<br><span style="font-size:12px;color:var(--muted);font-family:\'DM Sans\',sans-serif;font-weight:400;">remaining</span>';
+  totalEl.className = 'total-amt' + (isOver ? ' over' : '');
+  ofEl.textContent = 'of ' + fmt(totalAllocated) + ' across ' + buckets.length + (buckets.length === 1 ? ' bucket' : ' buckets');
+ 
+  const labels = buckets.map(b => b.name);
+  const data   = buckets.map(b => Math.max(0, spentOn(b.id)));
+  const colors = buckets.map(b => b.color);
+ 
+  if (!isOver && totalRemaining > 0) {
+    labels.push('Unspent');
+    data.push(totalRemaining);
+    colors.push(REMAINING_COLOR);
+  }
+ 
   if (chart) {
-    chart.data.labels                       = chartCats;
-    chart.data.datasets[0].data            = chartData;
-    chart.data.datasets[0].backgroundColor = chartColors;
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = data;
+    chart.data.datasets[0].backgroundColor = colors;
     chart.update('none');
   } else {
     const ctx = document.getElementById('pie').getContext('2d');
     chart = new Chart(ctx, {
       type: 'doughnut',
-      data: {
-        labels: chartCats,
-        datasets: [{
-          data:            chartData,
-          backgroundColor: chartColors,
-          borderWidth:     3,
-          borderColor:     '#1d1e21',
-          hoverBorderWidth: 4,
-        }],
-      },
+      data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 3, borderColor: '#1d1e21', hoverBorderWidth: 4 }] },
       options: {
         cutout: '68%',
         plugins: {
           legend: { display: false },
           tooltip: {
-            filter: item => item.label !== 'Remaining',
-            callbacks: {
-              label: ctx =>
-                ` ${fmt(ctx.raw)} (${budget ? Math.round((ctx.raw / budget) * 100) : 0}% of budget)`,
-            },
-            backgroundColor: '#0e0f11',
-            borderColor:     '#2a2b2e',
-            borderWidth:     1,
-            titleColor:      '#f0efe8',
-            bodyColor:       '#7a7975',
-            padding:         10,
+            filter: item => item.label !== 'Unspent',
+            callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.raw)} spent` },
+            backgroundColor: '#0e0f11', borderColor: '#2a2b2e', borderWidth: 1,
+            titleColor: '#f0efe8', bodyColor: '#7a7975', padding: 10,
           },
         },
         animation: { duration: 400, easing: 'easeInOutQuart' },
       },
     });
   }
-
-  // Legend
-  legend.innerHTML = cats.map(c => `
-    <div class="legend-item">
-      <div class="legend-dot" style="background:${COLORS[c] || '#aaa'}"></div>
-      <span>${c} ${fmt(grouped[c])}</span>
-    </div>
-  `).join('') + (!isOver ? `
-    <div class="legend-item">
-      <div class="legend-dot" style="background:${REMAINING_COLOR};border:1px solid #444"></div>
-      <span>Remaining ${fmt(remaining)}</span>
-    </div>
-  ` : '');
 }
-
-/* ─── Entries List ──────────────────────────────────────── */
-function renderEntries(list) {
-  const el = document.getElementById('entries-list');
-  if (list.length === 0) {
-    el.innerHTML = '<div class="no-entries">No entries for this period.</div>';
+ 
+/* ─── Buckets list ──────────────────────────────────────── */
+function renderBuckets() {
+  const el = document.getElementById('buckets-list');
+  if (buckets.length === 0) {
+    el.innerHTML = '<div class="no-entries">No buckets yet — add one to start tracking.</div>';
     return;
   }
-  const sorted = [...list].sort((a, b) => new Date(b.date) - new Date(a.date));
-  el.innerHTML = sorted.map(e => `
-    <div class="entry-card">
-      <div class="entry-dot" style="background:${COLORS[e.category] || '#aaa'}"></div>
-      <div class="entry-info">
-        <div class="entry-cat">${e.category}</div>
-        <div class="entry-date">${new Date(e.date).toLocaleString([], {
-          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-        })}</div>
+  el.innerHTML = buckets.map(b => {
+    const remaining = remainingOn(b.id);
+    const isOver = remaining < 0;
+    const pct = b.allocated > 0 ? Math.min((spentOn(b.id) / b.allocated) * 100, 100) : 0;
+    return `
+      <div class="bucket-card" data-id="${b.id}">
+        <div class="bucket-top">
+          <div class="bucket-name-wrap">
+            <span class="bucket-dot" style="background:${b.color}"></span>
+            <span class="bucket-name">${escapeHtml(b.name)}</span>
+            <span class="bucket-cadence">${CADENCE_LABEL[b.cadence] || ''}</span>
+          </div>
+          <div class="bucket-actions">
+            <button class="icon-btn reset-btn" data-id="${b.id}" title="Reset this bucket">⟳</button>
+            <button class="icon-btn edit-btn" data-id="${b.id}" title="Edit">✎</button>
+          </div>
+        </div>
+        <div class="bucket-amounts">
+          <span class="bucket-remaining ${isOver ? 'over' : ''}">${isOver ? '–' + fmt(remaining) : fmt(remaining)}</span>
+          <span class="bucket-of">of ${fmt(b.allocated)}</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill ${isOver ? 'over' : ''}" style="width:${pct}%"></div></div>
+        <button class="bucket-pull-btn" data-id="${b.id}">+ Pull from this bucket</button>
       </div>
-      <div class="entry-amount">${fmt(e.amount)}</div>
-      <button class="delete-btn" data-id="${e.id}">✕</button>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
-
-/* ─── Budget Modal ──────────────────────────────────────── */
-function openBudgetModal() {
-  const input = document.getElementById('budget-input');
-  input.value = budgets[period] || '';
-  document.getElementById('modal-overlay').classList.add('open');
-  setTimeout(() => input.focus(), 100);
+ 
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
 }
-
-function handleOverlayClick(e) {
-  if (e.target === document.getElementById('modal-overlay')) {
-    document.getElementById('modal-overlay').classList.remove('open');
+ 
+/* ─── Recent activity ───────────────────────────────────── */
+function renderActivity() {
+  const el = document.getElementById('entries-list');
+  if (entries.length === 0) {
+    el.innerHTML = '<div class="no-entries">No activity logged yet.</div>';
+    return;
   }
+  const sorted = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 40);
+  el.innerHTML = sorted.map(e => {
+    const b = buckets.find(x => x.id === e.bucketId);
+    const color = b ? b.color : '#aaa';
+    const name  = b ? b.name : '(deleted bucket)';
+    return `
+      <div class="entry-card">
+        <div class="entry-dot" style="background:${color}"></div>
+        <div class="entry-info">
+          <div class="entry-cat">${escapeHtml(name)}${e.note ? ' — ' + escapeHtml(e.note) : ''}</div>
+          <div class="entry-date">${timeAgoOrDate(e.date)}</div>
+        </div>
+        <div class="entry-amount">${fmt(e.amount)}</div>
+        <button class="delete-btn" data-id="${e.id}">✕</button>
+      </div>
+    `;
+  }).join('');
 }
-
-function saveBudget() {
-  const val = parseFloat(document.getElementById('budget-input').value);
-  if (!val || val <= 0) { showToast('Enter a valid budget'); return; }
-  budgets[period] = val;
+ 
+/* ─── Bucket modal (add / edit) ─────────────────────────── */
+function openBucketModal(bucketId) {
+  editingBucketId = bucketId || null;
+  const title   = document.getElementById('bucket-modal-title');
+  const nameEl  = document.getElementById('bucket-name-input');
+  const amtEl   = document.getElementById('bucket-amount-input');
+  const cadEl   = document.getElementById('bucket-cadence-input');
+  const delBtn  = document.getElementById('delete-bucket-btn');
+ 
+  if (editingBucketId) {
+    const b = buckets.find(x => x.id === editingBucketId);
+    title.textContent = 'Edit bucket';
+    nameEl.value = b.name;
+    amtEl.value  = b.allocated;
+    cadEl.value  = b.cadence;
+    delBtn.style.display = 'block';
+  } else {
+    title.textContent = 'New bucket';
+    nameEl.value = '';
+    amtEl.value  = '';
+    cadEl.value  = 'monthly';
+    delBtn.style.display = 'none';
+  }
+  document.getElementById('bucket-modal-overlay').classList.add('open');
+  setTimeout(() => nameEl.focus(), 100);
+}
+ 
+function closeBucketModal() {
+  document.getElementById('bucket-modal-overlay').classList.remove('open');
+  editingBucketId = null;
+}
+ 
+function saveBucket() {
+  const name = document.getElementById('bucket-name-input').value.trim();
+  const amt  = parseFloat(document.getElementById('bucket-amount-input').value);
+  const cad  = document.getElementById('bucket-cadence-input').value;
+ 
+  if (!name) { showToast('Give it a name'); return; }
+  if (!amt || amt <= 0) { showToast('Enter a valid amount'); return; }
+ 
+  if (editingBucketId) {
+    const b = buckets.find(x => x.id === editingBucketId);
+    b.name = name; b.allocated = amt; b.cadence = cad;
+    showToast('Bucket updated');
+  } else {
+    buckets.push({
+      id: 'b_' + Date.now().toString(36),
+      name, allocated: amt, cadence: cad,
+      color: PALETTE[buckets.length % PALETTE.length],
+      lastReset: new Date().toISOString(),
+    });
+    showToast(name + ' added');
+  }
   save();
-  document.getElementById('modal-overlay').classList.remove('open');
-  if (chart) { chart.destroy(); chart = null; }
+  closeBucketModal();
   render();
-  showToast('Budget set to ' + fmt(val));
 }
-
-/* ─── Add / Delete Entries ──────────────────────────────── */
-function addEntry() {
-  const amtEl = document.getElementById('amount-input');
-  const catEl = document.getElementById('cat-input');
-  const amt   = parseFloat(amtEl.value);
-  if (!amt || amt <= 0) { showToast('Enter a valid amount'); amtEl.focus(); return; }
-
+ 
+function deleteBucket() {
+  if (!editingBucketId) return;
+  if (!confirm('Delete this bucket? Its past activity stays in your history, but it\'ll stop tracking.')) return;
+  buckets = buckets.filter(b => b.id !== editingBucketId);
+  save();
+  closeBucketModal();
+  render();
+}
+ 
+function resetBucket(id) {
+  const b = buckets.find(x => x.id === id);
+  if (!b) return;
+  if (!confirm('Reset "' + b.name + '" back to ' + fmt(b.allocated) + '? Past activity stays in your history.')) return;
+  b.lastReset = new Date().toISOString();
+  save();
+  render();
+  showToast(b.name + ' reset');
+}
+ 
+function resetAllBuckets() {
+  if (buckets.length === 0) return;
+  if (!confirm('Reset all ' + buckets.length + ' buckets back to full? Past activity stays in your history.')) return;
+  const now = new Date().toISOString();
+  buckets.forEach(b => b.lastReset = now);
+  save();
+  render();
+  showToast('All buckets reset');
+}
+ 
+/* ─── Pull modal (log a spend against a bucket) ─────────── */
+function openPullModal(bucketId) {
+  const b = buckets.find(x => x.id === bucketId);
+  if (!b) return;
+  pullingBucketId = bucketId;
+  document.getElementById('pull-modal-title').textContent = 'Pull from ' + b.name;
+  document.getElementById('pull-amount-input').value = '';
+  document.getElementById('pull-note-input').value = '';
+  document.getElementById('pull-modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('pull-amount-input').focus(), 100);
+}
+ 
+function closePullModal() {
+  document.getElementById('pull-modal-overlay').classList.remove('open');
+  pullingBucketId = null;
+}
+ 
+function savePull() {
+  const amt  = parseFloat(document.getElementById('pull-amount-input').value);
+  const note = document.getElementById('pull-note-input').value.trim();
+  if (!amt || amt <= 0) { showToast('Enter a valid amount'); return; }
+  if (!pullingBucketId) return;
+ 
   entries.push({
-    id:       Date.now().toString(),
-    amount:   amt,
-    category: catEl.value,
-    date:     new Date().toISOString(),
+    id: Date.now().toString(),
+    bucketId: pullingBucketId,
+    amount: amt,
+    note,
+    date: new Date().toISOString(),
   });
-
   save();
-  amtEl.value = '';
+  const b = buckets.find(x => x.id === pullingBucketId);
+  closePullModal();
   render();
-  showToast(catEl.value + ' — ' + fmt(amt) + ' added');
+  showToast(fmt(amt) + ' pulled from ' + (b ? b.name : ''));
 }
-
+ 
 function deleteEntry(id) {
   entries = entries.filter(e => e.id !== id);
   save();
   render();
 }
-
-function clearAll() {
-  if (!confirm('Clear all entries for all periods?')) return;
+ 
+function clearHistory() {
+  if (!confirm('Clear all logged activity? Bucket totals will reset to full too.')) return;
   entries = [];
+  const now = new Date().toISOString();
+  buckets.forEach(b => b.lastReset = now);
   save();
   render();
 }
-
+ 
 /* ─── Toast ─────────────────────────────────────────────── */
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -286,38 +368,42 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2000);
 }
-
+ 
 /* ─── Event Wiring ──────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', function () {
-
-  // Period tabs
-  document.querySelectorAll('#period-tabs button').forEach(btn => {
-    btn.addEventListener('click', () => setPeriod(btn.dataset.period));
+ 
+  document.getElementById('add-bucket-btn').addEventListener('click', () => openBucketModal(null));
+  document.getElementById('reset-all-btn').addEventListener('click', resetAllBuckets);
+  document.getElementById('save-bucket-btn').addEventListener('click', saveBucket);
+  document.getElementById('delete-bucket-btn').addEventListener('click', deleteBucket);
+  document.getElementById('save-pull-btn').addEventListener('click', savePull);
+  document.getElementById('clear-btn').addEventListener('click', clearHistory);
+ 
+  document.getElementById('bucket-modal-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeBucketModal();
   });
-
-  // Budget edit button
-  document.getElementById('budget-edit-btn').addEventListener('click', openBudgetModal);
-
-  // Close modal when clicking the dark overlay (but not the modal itself)
-  document.getElementById('modal-overlay').addEventListener('click', function (e) {
-    if (e.target === this) this.classList.remove('open');
+  document.getElementById('pull-modal-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closePullModal();
   });
-
-  // Save budget button
-  document.getElementById('save-budget-btn').addEventListener('click', saveBudget);
-
-  // Add entry button
-  document.getElementById('add-btn').addEventListener('click', addEntry);
-
-  // Clear all button
-  document.getElementById('clear-btn').addEventListener('click', clearAll);
-
-  // Entry list — delegate delete clicks to the container
+ 
+  // Delegate bucket-card button clicks (cards are re-rendered on every change)
+  document.getElementById('buckets-list').addEventListener('click', function (e) {
+    const resetBtn = e.target.closest('.reset-btn');
+    const editBtn  = e.target.closest('.edit-btn');
+    const pullBtn  = e.target.closest('.bucket-pull-btn');
+    if (resetBtn) resetBucket(resetBtn.dataset.id);
+    else if (editBtn) openBucketModal(editBtn.dataset.id);
+    else if (pullBtn) openPullModal(pullBtn.dataset.id);
+  });
+ 
   document.getElementById('entries-list').addEventListener('click', function (e) {
     const btn = e.target.closest('.delete-btn');
     if (btn) deleteEntry(btn.dataset.id);
   });
-
-  // Initial render
+ 
+  // Enter-to-submit inside the two modals
+  document.getElementById('bucket-amount-input').addEventListener('keydown', e => { if (e.key === 'Enter') saveBucket(); });
+  document.getElementById('pull-amount-input').addEventListener('keydown', e => { if (e.key === 'Enter') savePull(); });
+ 
   render();
 });
