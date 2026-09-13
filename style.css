@@ -54,191 +54,7 @@ header p {
   font-weight: 300;
 }
 
-/* ─── Period Tabs ───────────────────────────────────────── */
-.period-tabs {
-  display: flex;
-  background: var(--card);
-  border-radius: 12px;
-  padding: 4px;
-  margin: 20px 24px 0;
-  gap: 2px;
-}
-
-.period-tabs button {
-  flex: 1;
-  padding: 8px;
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  border-radius: 9px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.period-tabs button.active {
-  background: var(--accent);
-  color: #0e0f11;
-}
-
-/* ─── Budget Bar ────────────────────────────────────────── */
-.budget-bar {
-  width: 100%;
-  padding: 16px 24px 0;
-}
-
-.budget-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.budget-label {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.budget-edit-btn {
-  font-size: 12px;
-  color: var(--accent);
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 500;
-}
-
-.budget-amounts {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.budget-spent {
-  font-family: 'DM Serif Display', serif;
-  font-size: 22px;
-  color: var(--text);
-}
-
-.budget-remaining {
-  font-family: 'DM Serif Display', serif;
-  font-size: 22px;
-  color: var(--accent);
-}
-
-.budget-remaining.over {
-  color: var(--danger);
-}
-
-.budget-sub {
-  font-size: 11px;
-  color: var(--muted);
-  display: block;
-  margin-top: 1px;
-}
-
-.progress-track {
-  width: 100%;
-  height: 8px;
-  background: var(--card);
-  border-radius: 100px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  border-radius: 100px;
-  background: var(--accent);
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
-}
-
-.progress-fill.over {
-  background: var(--danger);
-}
-
-/* ─── Budget Modal ──────────────────────────────────────── */
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 100;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.modal-overlay.open {
-  display: flex;
-}
-
-.modal {
-  width: 100%;
-  max-width: 430px;
-  background: var(--card);
-  border-radius: 20px 20px 0 0;
-  padding: 28px 24px 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.modal h3 {
-  font-family: 'DM Serif Display', serif;
-  font-size: 22px;
-  font-weight: 400;
-}
-
-.modal label {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  display: block;
-  margin-bottom: 6px;
-}
-
-.modal input {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: 'DM Serif Display', serif;
-  font-size: 28px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  width: 100%;
-  outline: none;
-  -webkit-appearance: none;
-}
-
-.modal input:focus {
-  border-color: var(--accent);
-}
-
-.modal-btn {
-  background: var(--accent);
-  color: #0e0f11;
-  border: none;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  padding: 16px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-
-.modal-btn:active {
-  opacity: 0.8;
-}
-
-/* ─── Chart Section ─────────────────────────────────────── */
+/* ─── Chart Section (overview) ──────────────────────────── */
 .chart-section {
   width: 100%;
   padding: 20px 24px 0;
@@ -280,16 +96,22 @@ header p {
 .total-amt {
   font-family: 'DM Serif Display', serif;
   font-size: 26px;
-  color: var(--text);
+  color: var(--accent);
   letter-spacing: -1px;
   line-height: 1.1;
   text-align: center;
+}
+
+.total-amt.over {
+  color: var(--danger);
 }
 
 .budget-of {
   font-size: 11px;
   color: var(--muted);
   margin-top: 2px;
+  text-align: center;
+  padding: 0 20px;
 }
 
 .no-budget-msg {
@@ -309,45 +131,22 @@ header p {
   padding: 0 30px;
 }
 
-/* ─── Legend ────────────────────────────────────────────── */
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+/* ─── Buckets ───────────────────────────────────────────── */
+.buckets-section {
   width: 100%;
-  padding: 0 24px;
-  justify-content: center;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  color: var(--muted);
-  background: var(--card);
-  border-radius: 100px;
-  padding: 4px 10px 4px 6px;
-  border: 1px solid var(--border);
-}
-
-.legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-/* ─── Add Expense ───────────────────────────────────────── */
-.add-section {
-  width: 100%;
-  padding: 20px 24px 0;
+  padding: 24px 24px 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.add-section h2 {
+.buckets-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.buckets-header h2 {
   font-size: 12px;
   font-weight: 500;
   color: var(--muted);
@@ -355,80 +154,260 @@ header p {
   text-transform: uppercase;
 }
 
-.input-row {
+.buckets-header-actions {
   display: flex;
-  gap: 8px;
-  align-items: stretch;
+  gap: 14px;
 }
 
-.input-group {
-  flex: 1;
+.text-btn {
+  font-size: 12px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  padding: 0;
+}
+
+.text-btn.accent {
+  color: var(--accent);
+}
+
+.text-btn:hover {
+  opacity: 0.8;
+}
+
+#buckets-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
 }
 
-.input-group label {
+.bucket-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: slideIn 0.2s ease-out;
+}
+
+.bucket-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bucket-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bucket-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bucket-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bucket-cadence {
+  font-size: 10px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.bucket-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 8px;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.icon-btn:hover {
+  opacity: 1;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.bucket-amounts {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.bucket-remaining {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  color: var(--accent);
+}
+
+.bucket-remaining.over {
+  color: var(--danger);
+}
+
+.bucket-of {
   font-size: 11px;
+  color: var(--muted);
+}
+
+.bucket-pull-btn {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.bucket-pull-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ─── Modals ────────────────────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 100;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+.modal {
+  width: 100%;
+  max-width: 430px;
+  background: var(--card);
+  border-radius: 20px 20px 0 0;
+  padding: 28px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.modal label {
+  font-size: 12px;
   color: var(--muted);
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  display: block;
+  margin-bottom: 6px;
 }
 
-input[type="number"],
-select {
-  background: var(--card);
+.modal input,
+.modal select {
+  background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
   font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
-  padding: 12px 14px;
+  font-size: 16px;
+  padding: 14px 16px;
   border-radius: 12px;
   width: 100%;
   outline: none;
-  transition: border-color 0.2s;
   -webkit-appearance: none;
 }
 
-input[type="number"]:focus,
-select:focus {
+.modal input[type="number"] {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+}
+
+.modal input:focus,
+.modal select:focus {
   border-color: var(--accent);
 }
 
-input[type="number"] {
-  font-family: 'DM Serif Display', serif;
-  font-size: 20px;
-}
-
-select option {
-  background: #1d1e21;
-}
-
-.add-btn {
+.modal-btn {
   background: var(--accent);
   color: #0e0f11;
   border: none;
   font-family: 'DM Sans', sans-serif;
   font-size: 15px;
   font-weight: 600;
-  padding: 14px 24px;
+  padding: 16px;
   border-radius: 12px;
   cursor: pointer;
-  white-space: nowrap;
-  align-self: flex-end;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: opacity 0.15s;
 }
 
-.add-btn:active {
+.modal-btn:active {
   opacity: 0.8;
-  transform: scale(0.97);
 }
 
-/* ─── Entries List ──────────────────────────────────────── */
+.modal-btn-secondary {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.modal-btn-secondary.danger {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--border));
+}
+
+.modal-btn-secondary:active {
+  opacity: 0.7;
+}
+
+/* ─── Recent activity ───────────────────────────────────── */
 .entries-section {
   width: 100%;
-  padding: 20px 24px 0;
+  padding: 24px 24px 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -495,6 +474,9 @@ select option {
   font-size: 13px;
   font-weight: 500;
   color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .entry-date {
