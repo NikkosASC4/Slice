@@ -13,92 +13,82 @@
 
   <header>
     <h1>Slice</h1>
-    <p>spending tracker</p>
+    <p>your buckets</p>
   </header>
 
-  <div class="period-tabs" id="period-tabs">
-    <button class="active" data-period="daily">Daily</button>
-    <button data-period="weekly">Weekly</button>
-    <button data-period="monthly">Monthly</button>
-  </div>
-
-  <!-- Budget bar -->
-  <div class="budget-bar">
-    <div class="budget-row">
-      <span class="budget-label">Budget</span>
-      <button class="budget-edit-btn" id="budget-edit-btn">Edit</button>
-    </div>
-    <div class="budget-amounts">
-      <div>
-        <span class="budget-spent" id="spent-display">$0.00</span>
-        <span class="budget-sub">spent</span>
-      </div>
-      <div style="text-align:right">
-        <span class="budget-remaining" id="remaining-display">—</span>
-        <span class="budget-sub" id="remaining-label">set a budget</span>
-      </div>
-    </div>
-    <div class="progress-track">
-      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
-    </div>
-  </div>
-
-  <!-- Budget modal -->
-  <div class="modal-overlay" id="modal-overlay">
-    <div class="modal">
-      <h3>Set budget</h3>
-      <div>
-        <label>Amount ($)</label>
-        <input type="number" id="budget-input" placeholder="500.00" min="0" step="0.01">
-      </div>
-      <button class="modal-btn" id="save-budget-btn">Save budget</button>
-    </div>
-  </div>
-
-  <!-- Chart -->
+  <!-- Overview -->
   <section class="chart-section">
     <div class="chart-wrap">
       <div class="no-budget-msg" id="no-budget-msg">
-        <span>Set a budget to get started.</span>
+        <span>Add a bucket to get started.</span>
       </div>
       <canvas id="pie" style="display:none"></canvas>
       <div class="chart-center" id="chart-center" style="display:none">
-        <span class="total-label" id="period-label">Today</span>
+        <span class="total-label">Remaining</span>
         <span class="total-amt" id="total-amt"></span>
         <span class="budget-of" id="budget-of"></span>
       </div>
     </div>
-    <div class="legend" id="legend"></div>
   </section>
 
-  <!-- Add expense -->
-  <section class="add-section">
-    <h2>Add expense</h2>
-    <div class="input-row">
-      <div class="input-group">
-        <label>Amount ($)</label>
-        <input type="number" id="amount-input" placeholder="0.00" min="0" step="0.01">
-      </div>
-      <div class="input-group">
-        <label>Category</label>
-        <select id="cat-input">
-          <option value="Food">Food</option>
-          <option value="Transport">Transport</option>
-          <option value="Shopping">Shopping</option>
-          <option value="Entertainment">Entertainment</option>
-          <option value="Health">Health</option>
-          <option value="Other">Other</option>
-        </select>
+  <!-- Buckets -->
+  <section class="buckets-section">
+    <div class="buckets-header">
+      <h2>Buckets</h2>
+      <div class="buckets-header-actions">
+        <button class="text-btn" id="reset-all-btn">Reset all</button>
+        <button class="text-btn accent" id="add-bucket-btn">+ New</button>
       </div>
     </div>
-    <button class="add-btn" id="add-btn">+ Add</button>
+    <div id="buckets-list"></div>
   </section>
 
-  <!-- Entries list -->
+  <!-- Bucket add/edit modal -->
+  <div class="modal-overlay" id="bucket-modal-overlay">
+    <div class="modal">
+      <h3 id="bucket-modal-title">New bucket</h3>
+      <div>
+        <label>Name</label>
+        <input type="text" id="bucket-name-input" placeholder="Groceries" maxlength="24">
+      </div>
+      <div>
+        <label>Amount ($)</label>
+        <input type="number" id="bucket-amount-input" placeholder="350.00" min="0" step="0.01">
+      </div>
+      <div>
+        <label>Resets</label>
+        <select id="bucket-cadence-input">
+          <option value="weekly">Weekly</option>
+          <option value="monthly" selected>Monthly</option>
+          <option value="asneeded">As needed</option>
+        </select>
+      </div>
+      <button class="modal-btn" id="save-bucket-btn">Save bucket</button>
+      <button class="modal-btn-secondary danger" id="delete-bucket-btn" style="display:none">Delete bucket</button>
+    </div>
+  </div>
+
+  <!-- Pull (log spend) modal -->
+  <div class="modal-overlay" id="pull-modal-overlay">
+    <div class="modal">
+      <h3 id="pull-modal-title">Pull from Groceries</h3>
+      <div>
+        <label>Amount ($)</label>
+        <input type="number" id="pull-amount-input" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+      </div>
+      <div>
+        <label>Note (optional)</label>
+        <input type="text" id="pull-note-input" placeholder="Wegmans run" maxlength="40">
+      </div>
+      <button class="modal-btn" id="save-pull-btn">Log it</button>
+    </div>
+  </div>
+
+  <!-- Recent activity -->
   <section class="entries-section">
     <div class="entries-header">
-      <h2 id="entries-heading">Today's entries</h2>
-      <button class="clear-btn" id="clear-btn">Clear all</button>
+      <h2>Recent activity</h2>
+      <button class="clear-btn" id="clear-btn">Clear history</button>
     </div>
     <div id="entries-list"></div>
   </section>
