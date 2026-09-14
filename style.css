@@ -54,14 +54,88 @@ header p {
   font-weight: 300;
 }
 
-/* ─── Chart Section (overview) ──────────────────────────── */
+/* ─── Spend hero (primary view: "can I afford this") ──────── */
+.spend-hero {
+  width: 100%;
+  padding: 28px 24px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.spend-toggle {
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.spend-toggle-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 100px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.spend-toggle-btn.active {
+  background: var(--accent);
+  color: #0e0f11;
+}
+
+.spend-amt {
+  font-family: 'DM Serif Display', serif;
+  font-size: 52px;
+  letter-spacing: -1.5px;
+  line-height: 1.05;
+  color: var(--accent);
+}
+
+.spend-amt.over {
+  color: var(--danger);
+}
+
+.spend-sub {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 0 20px;
+}
+
+.breakdown-toggle {
+  margin-top: 10px;
+  padding: 4px 0;
+}
+
+/* ─── Chart Section (overview breakdown, opt-in / collapsed by default) ── */
 .chart-section {
   width: 100%;
-  padding: 20px 24px 0;
+  padding: 4px 24px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
+}
+
+.chart-section.open {
+  max-height: 420px;
+  opacity: 1;
+  pointer-events: auto;
+  padding: 12px 24px 0;
 }
 
 .chart-wrap {
@@ -281,6 +355,26 @@ header p {
   color: var(--muted);
 }
 
+.progress-track {
+  width: 100%;
+  height: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 100px;
+  transition: width 0.3s ease;
+}
+
+.progress-fill.over {
+  background: var(--danger);
+}
+
 .bucket-pull-btn {
   background: var(--surface);
   border: 1px dashed var(--border);
@@ -329,6 +423,12 @@ header p {
   font-family: 'DM Serif Display', serif;
   font-size: 22px;
   font-weight: 400;
+}
+
+.confirm-msg {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .modal label {

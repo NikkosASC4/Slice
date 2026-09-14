@@ -16,8 +16,19 @@
     <p>your buckets</p>
   </header>
 
-  <!-- Overview -->
-  <section class="chart-section">
+  <!-- Safe to spend (primary view) -->
+  <section class="spend-hero">
+    <div class="spend-toggle" id="spend-toggle">
+      <button class="spend-toggle-btn active" data-range="today" type="button">Today</button>
+      <button class="spend-toggle-btn" data-range="week" type="button">This week</button>
+    </div>
+    <div class="spend-amt" id="spend-amt">$0.00</div>
+    <div class="spend-sub" id="spend-sub">safe to spend</div>
+    <button class="text-btn breakdown-toggle" id="breakdown-toggle" type="button">Show full breakdown ▾</button>
+  </section>
+
+  <!-- Overview (secondary / opt-in breakdown) -->
+  <section class="chart-section" id="chart-section">
     <div class="chart-wrap">
       <div class="no-budget-msg" id="no-budget-msg">
         <span>Add a bucket to get started.</span>
@@ -81,6 +92,16 @@
         <input type="text" id="pull-note-input" placeholder="Wegmans run" maxlength="40">
       </div>
       <button class="modal-btn" id="save-pull-btn">Log it</button>
+    </div>
+  </div>
+
+  <!-- Confirm dialog (in-app replacement for window.confirm, which the artifact sandbox blocks) -->
+  <div class="modal-overlay" id="confirm-modal-overlay">
+    <div class="modal">
+      <h3 id="confirm-modal-title">Are you sure?</h3>
+      <p id="confirm-modal-msg" class="confirm-msg"></p>
+      <button class="modal-btn" id="confirm-modal-ok">Confirm</button>
+      <button class="modal-btn-secondary" id="confirm-modal-cancel">Cancel</button>
     </div>
   </div>
 
